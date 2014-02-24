@@ -31,7 +31,7 @@ if( defined('MAX_BASE') && MAX_BASE != 256 ) {
 if (!defined('USE_EXT')) {
     if (extension_loaded('gmp') ) {
         
-		define('USE_EXT', 'GMP');
+        define('USE_EXT', 'GMP');
     } else if(extension_loaded('bcmath')) {
         define('USE_EXT', 'BCMATH');
     } else {
@@ -109,37 +109,37 @@ class CryptUtil {
 class HDAddress {
 
 
-	private static $secp256k1;
-  	private static $secp256k1_G;
-	private static $secp256k1_N;
-  	private static $prefix_private;
-  	private static $prefix_public;
-	private static $version_private;
-	private static $version_public;
-	
-	
-	public $secretKey ;
-	public $secretKeyWif ;
-	public $chainCode ;
-	public $depth ;
-	public $publicKey ;
-	public $identifier ;
-	public $fingerPrint ;
-	public $mainAddress ;
-	public $serialPublicKey ;
-	public $serialPrivateKey ;
-	
-	
-	
-  	public static function bitcoin() {  self::$prefix_public = '0x00'; self::$prefix_private = '0x80';   self::$version_public = '0488b21e'; self::$version_private = '0488ade4';   }
-  	public static function feathercoin() { self::$prefix_public = '0x0E'; self::$prefix_private = '0x8E'; self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
-  	public static function litecoin() { self::$prefix_public = '0x30'; self::$prefix_private = '0xB0';  self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
-  	public static function namecoin() { self::$prefix_public = '0x34'; self::$prefix_private = '0xB4';  self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
-  	public static function ppcoin() {   self::$prefix_public = '0x37'; self::$prefix_private = '0xB7';  self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
-	
-	public static function bitcoin_testnet() { self::$prefix_public = '0x6F'; self::$prefix_private = '0xEF';  self::$version_public = '043587cf'; self::$version_private = '04358394'; }
+    private static $secp256k1;
+    private static $secp256k1_G;
+    private static $secp256k1_N;
+    private static $prefix_private;
+    private static $prefix_public;
+    private static $version_private;
+    private static $version_public;
+    
+    
+    public $secretKey ;
+    public $secretKeyWif ;
+    public $chainCode ;
+    public $depth ;
+    public $publicKey ;
+    public $identifier ;
+    public $fingerPrint ;
+    public $mainAddress ;
+    public $serialPublicKey ;
+    public $serialPrivateKey ;
+    
+    
+    
+    public static function bitcoin() {  self::$prefix_public = '0x00'; self::$prefix_private = '0x80';   self::$version_public = '0488b21e'; self::$version_private = '0488ade4';   }
+    public static function feathercoin() { self::$prefix_public = '0x0E'; self::$prefix_private = '0x8E'; self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
+    public static function litecoin() { self::$prefix_public = '0x30'; self::$prefix_private = '0xB0';  self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
+    public static function namecoin() { self::$prefix_public = '0x34'; self::$prefix_private = '0xB4';  self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
+    public static function ppcoin() {   self::$prefix_public = '0x37'; self::$prefix_private = '0xB7';  self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
+    
+    public static function bitcoin_testnet() { self::$prefix_public = '0x6F'; self::$prefix_private = '0xEF';  self::$version_public = '043587cf'; self::$version_private = '04358394'; }
 
-	
+    
         
     public static function setup() {
         if( !isset(self::$secp256k1) ) {
@@ -158,7 +158,7 @@ class HDAddress {
 
     } 
 
-	public static function base58check_encode($leadingByte, $bin, $trailingByte = null) {
+    public static function base58check_encode($leadingByte, $bin, $trailingByte = null) {
         $bin = chr($leadingByte) . $bin;
         if ($trailingByte !== null) { $bin .= chr($trailingByte); }
         $checkSum = substr(hash('sha256', hash('sha256', $bin, true), true), 0, 4);
@@ -175,90 +175,90 @@ class HDAddress {
     public static function base58_encode($num) {
         return bcmath_Utils::dec2base($num, 58, '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
     }
-	
-	
-	public static function generate_master() {
-		$seed = '';
+    
+    
+    public static function generate_master() {
+        $seed = '';
         //for ($i = 0; $i < 32; $i++) { $seed .= chr(mt_rand(0, $i ? 0xff : 0xfe)); }
-		for ($i = 0; $i < 32; $i++) { $seed .= chr(CryptUtil::devurandom_rand(0, $i ? 0xff : 0xfe)); }
-		//using devurandom for more secure prng
-		return bin2hex($seed);
-	}
-	
-	
-	
-	function derive($i,$priv = false) {
-		$testi = $i;
-		if($priv) $i += 0x80000000 ;
+        for ($i = 0; $i < 32; $i++) { $seed .= chr(CryptUtil::devurandom_rand(0, $i ? 0xff : 0xfe)); }
+        //using devurandom for more secure prng
+        return bin2hex($seed);
+    }
+    
+    
+    
+    function derive($i,$priv = false) {
+        $testi = $i;
+        if($priv) $i += 0x80000000 ;
 
-		if ($i >= 0x80000000) {
-			//private derivation
-			//let I = HMAC-SHA512(Key = cpar, Data = 0x00 || kpar || i) [Note:]
+        if ($i >= 0x80000000) {
+            //private derivation
+            //let I = HMAC-SHA512(Key = cpar, Data = 0x00 || kpar || i) [Note:]
         $I = hash_hmac('sha512',  chr(0x00) . hex2bin($this->secretKey) .   pack('N',$i) ,   hex2bin($this->chainCode) );
-		} else {
-			//public derivation
-			//let I = HMAC-SHA512(Key = cpar, Data = ?(kpar*G) || i)
-			$I = hash_hmac('sha512',  hex2bin($this->publicKey). pack('N',$i)  ,   hex2bin($this->chainCode) );
-		}
-	
-		$hd = new self();
-	
-		if ($this->secretKey) {
-			$mod = gmp_mod(gmp_add(gmp_init(substr($I,0,64), 16) , gmp_init($this->secretKey,16)) ,  gmp_init(self::$secp256k1_N,16) ) ;
-			$hd->secretKey =  gmp_strval( $mod , 16 );
-			$hd->secretKeyWif = self::base58check_encode( self::$prefix_private , $mod, 0x01 ) ;
+        } else {
+            //public derivation
+            //let I = HMAC-SHA512(Key = cpar, Data = ?(kpar*G) || i)
+            $I = hash_hmac('sha512',  hex2bin($this->publicKey). pack('N',$i)  ,   hex2bin($this->chainCode) );
+        }
+    
+        $hd = new self();
+    
+        if ($this->secretKey) {
+            $mod = gmp_mod(gmp_add(gmp_init(substr($I,0,64), 16) , gmp_init($this->secretKey,16)) ,  gmp_init(self::$secp256k1_N,16) ) ;
+            $hd->secretKey =  gmp_strval( $mod , 16 );
+            $hd->secretKeyWif = self::base58check_encode( self::$prefix_private , $mod, 0x01 ) ;
 
-			$point = Point::mul($mod, self::$secp256k1_G);
-			
-			$pubBinStrCompressed =  (intval(substr($point->getY(), -1, 1)) % 2 == 0 ? "\x02" : "\x03")
-					. str_pad(bcmath_Utils::bc2bin($point->getX()), 32, "\x00", STR_PAD_LEFT);
-			
-		} else {
-			
-			$pubBinStrCompressed = gmp_add(gmp_init(substr($I,0,64), 16) , gmp_init($this->publicKey,16));
-		
-		}
-		
-		$hd->identifier =  hash('ripemd160', hash('sha256', $pubBinStrCompressed, true));
-		$hd->fingerPrint = substr($this->identifier,0,8);
-		$hd->mainAddress =  self::base58check_encode( self::$prefix_public ,  hash('ripemd160', hash('sha256', $pubBinStrCompressed, true),true)) ;
-		
-		$hd->publicKey =  bin2hex($pubBinStrCompressed);
-		$hd->chainCode = substr($I,64,64);
-		$hd->depth = $this->depth + 1;
-		$hd->serialPublicKey =  self::$version_public  . bin2hex(chr($hd->depth))  . $this->fingerPrint .  bin2hex(pack('N',$i)) . $hd->chainCode. $hd->publicKey ;
-		$hd->serialPrivateKey = self::$version_private  . bin2hex(chr($hd->depth))  . $this->fingerPrint . bin2hex(pack('N',$i)) . $hd->chainCode. '00' . $hd->secretKey ;
-		return $hd;
-	
-	}
-	
-		
+            $point = Point::mul($mod, self::$secp256k1_G);
+            
+            $pubBinStrCompressed =  (intval(substr($point->getY(), -1, 1)) % 2 == 0 ? "\x02" : "\x03")
+                    . str_pad(bcmath_Utils::bc2bin($point->getX()), 32, "\x00", STR_PAD_LEFT);
+            
+        } else {
+            
+            $pubBinStrCompressed = gmp_add(gmp_init(substr($I,0,64), 16) , gmp_init($this->publicKey,16));
+        
+        }
+        
+        $hd->identifier =  hash('ripemd160', hash('sha256', $pubBinStrCompressed, true));
+        $hd->fingerPrint = substr($this->identifier,0,8);
+        $hd->mainAddress =  self::base58check_encode( self::$prefix_public ,  hash('ripemd160', hash('sha256', $pubBinStrCompressed, true),true)) ;
+        
+        $hd->publicKey =  bin2hex($pubBinStrCompressed);
+        $hd->chainCode = substr($I,64,64);
+        $hd->depth = $this->depth + 1;
+        $hd->serialPublicKey =  self::$version_public  . bin2hex(chr($hd->depth))  . $this->fingerPrint .  bin2hex(pack('N',$i)) . $hd->chainCode. $hd->publicKey ;
+        $hd->serialPrivateKey = self::$version_private  . bin2hex(chr($hd->depth))  . $this->fingerPrint . bin2hex(pack('N',$i)) . $hd->chainCode. '00' . $hd->secretKey ;
+        return $hd;
+    
+    }
+    
+        
     function __construct($seed = '') {
        if ($seed == '') return ; 
-	   if( !self::$prefix_public || !self::$prefix_private ) {  throw new Exception('Coin type not set'); exit; } 
-		self::setup();
-		$I = hash_hmac('sha512',   hex2bin($seed) , 'Bitcoin seed');
-		
-		$this->secretKey =  substr($I,0,64 );
-		
-		$point = Point::mul(bcmath_Utils::bin2bc("\x00" . hex2bin($this->secretKey) ), self::$secp256k1_G);
-		$pubBinStrCompressed = (intval(substr($point->getY(), -1, 1)) % 2 == 0 ? "\x02" : "\x03")
-			. str_pad(bcmath_Utils::bc2bin($point->getX()), 32, "\x00", STR_PAD_LEFT);
+       if( !self::$prefix_public || !self::$prefix_private ) {  throw new Exception('Coin type not set'); exit; } 
+        self::setup();
+        $I = hash_hmac('sha512',   hex2bin($seed) , 'Bitcoin seed');
+        
+        $this->secretKey =  substr($I,0,64 );
+        
+        $point = Point::mul(bcmath_Utils::bin2bc("\x00" . hex2bin($this->secretKey) ), self::$secp256k1_G);
+        $pubBinStrCompressed = (intval(substr($point->getY(), -1, 1)) % 2 == 0 ? "\x02" : "\x03")
+            . str_pad(bcmath_Utils::bc2bin($point->getX()), 32, "\x00", STR_PAD_LEFT);
    
-		
-		$this->secretKeyWif = self::base58check_encode( self::$prefix_private ,  hex2bin($this->secretKey),0x01 );
-		
-		$this->identifier =  hash('ripemd160', hash('sha256', $pubBinStrCompressed, true));
-		$this->fingerPrint = substr($this->identifier,0,8);
-		$this->mainAddress =  self::base58check_encode( self::$prefix_public ,  hash('ripemd160', hash('sha256', $pubBinStrCompressed, true),true)) ;
-		
-		$this->publicKey =  bin2hex($pubBinStrCompressed);
-		$this->chainCode = substr($I,64,64);
-		$this->depth = 0;
-		$this->serialPublicKey =  self::$version_public  . '00'  . '00000000' . '00000000'. $this->chainCode. $this->publicKey ;
-		$this->serialPrivateKey = self::$version_private  . '00'  . '00000000' . '00000000'. $this->chainCode. '00' . $this->secretKey ;
+        
+        $this->secretKeyWif = self::base58check_encode( self::$prefix_private ,  hex2bin($this->secretKey),0x01 );
+        
+        $this->identifier =  hash('ripemd160', hash('sha256', $pubBinStrCompressed, true));
+        $this->fingerPrint = substr($this->identifier,0,8);
+        $this->mainAddress =  self::base58check_encode( self::$prefix_public ,  hash('ripemd160', hash('sha256', $pubBinStrCompressed, true),true)) ;
+        
+        $this->publicKey =  bin2hex($pubBinStrCompressed);
+        $this->chainCode = substr($I,64,64);
+        $this->depth = 0;
+        $this->serialPublicKey =  self::$version_public  . '00'  . '00000000' . '00000000'. $this->chainCode. $this->publicKey ;
+        $this->serialPrivateKey = self::$version_private  . '00'  . '00000000' . '00000000'. $this->chainCode. '00' . $this->secretKey ;
    
-	}
+    }
     
 
 }
