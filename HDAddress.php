@@ -81,6 +81,7 @@ interface PointInterface{public function __construct(CurveFp$curve,$x,$y,$order=
 class Point implements PointInterface{public $curve;public $x;public $y;public $order;public static $infinity='infinity';public function __construct(CurveFp$curve,$x,$y,$order=null){$this->curve=$curve;$this->x=$x;$this->y=$y;$this->order=$order;if(isset($this->curve)&&($this->curve instanceof CurveFp)){if(!$this->curve->contains($this->x,$this->y)){throw new ErrorException("Curve".print_r($this->curve,true)." does not contain point ( ".$x." , ".$y." )");}if($this->order!=null){if(self::cmp(self::mul($order,$this),self::$infinity)!=0){throw new ErrorException("SELF * ORDER MUST EQUAL INFINITY.");}}}}public static function cmp($p1,$p2){if(extension_loaded('gmp')&&USE_EXT=='GMP'){if(!($p1 instanceof Point)){if(($p2 instanceof Point))return 1;if(!($p2 instanceof Point))return 0;}if(!($p2 instanceof Point)){if(($p1 instanceof Point))return 1;if(!($p1 instanceof Point))return 0;}if(gmp_cmp($p1->x,$p2->x)==0&&gmp_cmp($p1->y,$p2->y)==0&&CurveFp::cmp($p1->curve,$p2->curve)){return 0;}else{return 1;}}elseif(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){if(!($p1 instanceof Point)){if(($p2 instanceof Point))return 1;if(!($p2 instanceof Point))return 0;}if(!($p2 instanceof Point)){if(($p1 instanceof Point))return 1;if(!($p1 instanceof Point))return 0;}if(bccomp($p1->x,$p2->x)==0&&bccomp($p1->y,$p2->y)==0&&CurveFp::cmp($p1->curve,$p2->curve)){return 0;}else{return 1;}}else{throw new ErrorException("Please install BCMATH or GMP");}}public static function add($p1,$p2){if(self::cmp($p2,self::$infinity)==0&&($p1 instanceof Point)){return $p1;}if(self::cmp($p1,self::$infinity)==0&&($p2 instanceof Point)){return $p2;}if(self::cmp($p1,self::$infinity)==0&&self::cmp($p2,self::$infinity)==0){return self::$infinity;}if(extension_loaded('gmp')&&USE_EXT=='GMP'){if(CurveFp::cmp($p1->curve,$p2->curve)==0){if(gmp_Utils::gmp_mod2(gmp_cmp($p1->x,$p2->x),$p1->curve->getPrime())==0){if(gmp_Utils::gmp_mod2(gmp_add($p1->y,$p2->y),$p1->curve->getPrime())==0){return self::$infinity;}else{return self::double($p1);}}$p=$p1->curve->getPrime();$l=gmp_strval(gmp_mul(gmp_sub($p2->y,$p1->y),NumberTheory::inverse_mod(gmp_sub($p2->x,$p1->x),$p)));$x3=gmp_strval(gmp_Utils::gmp_mod2(gmp_sub(gmp_sub(gmp_pow($l,2),$p1->x),$p2->x),$p));$y3=gmp_strval(gmp_Utils::gmp_mod2(gmp_sub(gmp_mul($l,gmp_sub($p1->x,$x3)),$p1->y),$p));$p3=new Point($p1->curve,$x3,$y3);return $p3;}else{throw new ErrorException("The Elliptic Curves do not match.");}}elseif(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){if(CurveFp::cmp($p1->curve,$p2->curve)==0){if(bcmod(bccomp($p1->x,$p2->x),$p1->curve->getPrime())==0){if(bcmod(bcadd($p1->y,$p2->y),$p1->curve->getPrime())==0){return self::$infinity;}else{return self::double($p1);}}$p=$p1->curve->getPrime();$l=bcmod(bcmul(bcsub($p2->y,$p1->y),NumberTheory::inverse_mod(bcsub($p2->x,$p1->x),$p)),$p);$x3=bcmod(bcsub(bcsub(bcpow($l,2),$p1->x),$p2->x),$p);$step0=bcsub($p1->x,$x3);$step1=bcmul($l,$step0);$step2=bcsub($step1,$p1->y);$step3=bcmod($step2,$p);$y3=bcmod(bcsub(bcmul($l,bcsub($p1->x,$x3)),$p1->y),$p);if(bccomp(0,$y3)==1)$y3=bcadd($p,$y3);$p3=new Point($p1->curve,$x3,$y3);return $p3;}else{throw new ErrorException("The Elliptic Curves do not match.");}}else{throw new ErrorException("Please install BCMATH or GMP");}}public static function mul($x2,Point$p1){if(extension_loaded('gmp')&&USE_EXT=='GMP'){$e=$x2;if(self::cmp($p1,self::$infinity)==0){return self::$infinity;}if($p1->order!=null){$e=gmp_strval(gmp_Utils::gmp_mod2($e,$p1->order));}if(gmp_cmp($e,0)==0){return self::$infinity;}$e=gmp_strval($e);if(gmp_cmp($e,0)>0){$e3=gmp_mul(3,$e);$negative_self=new Point($p1->curve,$p1->x,gmp_strval(gmp_sub(0,$p1->y)),$p1->order);$i=gmp_div(self::leftmost_bit($e3),2);$result=$p1;while(gmp_cmp($i,1)>0){$result=self::double($result);if(gmp_cmp(gmp_and($e3,$i),0)!=0&&gmp_cmp(gmp_and($e,$i),0)==0){$result=self::add($result,$p1);}if(gmp_cmp(gmp_and($e3,$i),0)==0&&gmp_cmp(gmp_and($e,$i),0)!=0){$result=self::add($result,$negative_self);}$i=gmp_strval(gmp_div($i,2));}return $result;}}elseif(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){$e=$x2;if(self::cmp($p1,self::$infinity)==0){return self::$infinity;}if($p1->order!=null){$e=bcmod($e,$p1->order);}if(bccomp($e,0)==0){return self::$infinity;}if(bccomp($e,0)==1){$e3=bcmul(3,$e);$negative_self=new Point($p1->curve,$p1->x,bcsub(0,$p1->y),$p1->order);$i=bcdiv(self::leftmost_bit($e3),2);$result=$p1;while(bccomp($i,1)==1){$result=self::double($result);if(bccomp(bcmath_Utils::bcand($e3,$i),'0')!=0&&bccomp(bcmath_Utils::bcand($e,$i),'0')==0){$result=self::add($result,$p1);}if(bccomp(bcmath_Utils::bcand($e3,$i),0)==0&&bccomp(bcmath_Utils::bcand($e,$i),0)!=0){$result=self::add($result,$negative_self);}$i=bcdiv($i,2);}return $result;}}else{throw new ErrorException("Please install BCMATH or GMP");}}public static function leftmost_bit($x){if(extension_loaded('gmp')&&USE_EXT=='GMP'){if(gmp_cmp($x,0)>0){$result=1;while(gmp_cmp($result,$x)<0||gmp_cmp($result,$x)==0){$result=gmp_mul(2,$result);}return gmp_strval(gmp_div($result,2));}}elseif(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){if(bccomp($x,0)==1){$result=1;while(bccomp($result,$x)==-1||bccomp($result,$x)==0){$result=bcmul(2,$result);}return bcdiv($result,2);}}else{throw new ErrorException("Please install BCMATH or GMP");}}public static function rmul(Point$x1,$m){return self::mul($m,$x1);}public function __toString(){if(!($this instanceof Point)&&$this==self::$infinity)return self::$infinity;return"(".$this->x.",".$this->y.")";}public static function double(Point$p1){if(extension_loaded('gmp')&&USE_EXT=='GMP'){$p=$p1->curve->getPrime();$a=$p1->curve->getA();$inverse=NumberTheory::inverse_mod(gmp_strval(gmp_mul(2,$p1->y)),$p);$three_x2=gmp_mul(3,gmp_pow($p1->x,2));$l=gmp_strval(gmp_Utils::gmp_mod2(gmp_mul(gmp_add($three_x2,$a),$inverse),$p));$x3=gmp_strval(gmp_Utils::gmp_mod2(gmp_sub(gmp_pow($l,2),gmp_mul(2,$p1->x)),$p));$y3=gmp_strval(gmp_Utils::gmp_mod2(gmp_sub(gmp_mul($l,gmp_sub($p1->x,$x3)),$p1->y),$p));if(gmp_cmp(0,$y3)>0)$y3=gmp_strval(gmp_add($p,$y3));$p3=new Point($p1->curve,$x3,$y3);return $p3;}elseif(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){$p=$p1->curve->getPrime();$a=$p1->curve->getA();$inverse=NumberTheory::inverse_mod(bcmul(2,$p1->y),$p);$three_x2=bcmul(3,bcpow($p1->x,2));$l=bcmod(bcmul(bcadd($three_x2,$a),$inverse),$p);$x3=bcmod(bcsub(bcpow($l,2),bcmul(2,$p1->x)),$p);$y3=bcmod(bcsub(bcmul($l,bcsub($p1->x,$x3)),$p1->y),$p);if(bccomp(0,$y3)==1)$y3=bcadd($p,$y3);$p3=new Point($p1->curve,$x3,$y3);return $p3;}else{throw new ErrorException("Please install BCMATH or GMP");}}public function getX(){return $this->x;}public function getY(){return $this->y;}public function getCurve(){return $this->curve;}public function getOrder(){return $this->order;}}
 // https://github.com/mdanter/phpecc/blob/master/classes/util/bcmath_Utils.php
 class bcmath_Utils{public static function bcrand($min,$max=false){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){if(!$max){$max=$min;$min=0;}return bcadd(bcmul(bcdiv(mt_rand(0,mt_getrandmax()),mt_getrandmax(),strlen($max)),bcsub(bcadd($max,1),$min)),$min);}else{throw new ErrorException("Please install BCMATH");}}public static function bchexdec($hex){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){$len=strlen($hex);$dec='';for($i=1;$i<=$len;$i++)$dec=bcadd($dec,bcmul(strval(hexdec($hex[$i-1])),bcpow('16',strval($len-$i))));return $dec;}else{throw new ErrorException("Please install BCMATH");}}public static function bcdechex($dec){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){$hex='';$positive=$dec<0?false:true;while($dec){$hex.=dechex(abs(bcmod($dec,'16')));$dec=bcdiv($dec,'16',0);}if($positive)return strrev($hex);for($i=0;$isset($hex[$i]);$i++)$hex[$i]=dechex(15-hexdec($hex[$i]));for($i=0;isset($hex[$i])&&$hex[$i]=='f';$i++)$hex[$i]='0';if(isset($hex[$i]))$hex[$i]=dechex(hexdec($hex[$i])+1);return strrev($hex);}else{throw new ErrorException("Please install BCMATH");}}public static function bcand($x,$y){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){return self::_bcbitwise_internal($x,$y,'bcmath_Utils::_bcand');}else{throw new ErrorException("Please install BCMATH");}}public static function bcor($x,$y){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){return self::_bcbitwise_internal($x,$y,'self::_bcor');}else{throw new ErrorException("Please install BCMATH");}}public static function bcxor($x,$y){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){return self::_bcbitwise_internal($x,$y,'self::_bcxor');}else{throw new ErrorException("Please install BCMATH");}}public static function bcleftshift($num,$shift){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){bcscale(0);return bcmul($num,bcpow(2,$shift));}else{throw new ErrorException("Please install BCMATH");}}public static function bcrightshift($num,$shift){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){bcscale(0);return bcdiv($num,bcpow(2,$shift));}else{throw new ErrorException("Please install BCMATH");}}public static function _bcand($x,$y){return $x&$y;}public static function _bcor($x,$y){return $x|$y;}public static function _bcxor($x,$y){return $x^$y;}public static function _bcbitwise_internal($x,$y,$op){$bx=self::bc2bin($x);$by=self::bc2bin($y);self::equalbinpad($bx,$by);$ix=0;$ret='';for($ix=0;$ix<strlen($bx);$ix++){$xd=substr($bx,$ix,1);$yd=substr($by,$ix,1);$ret.=call_user_func($op,$xd,$yd);}return self::bin2bc($ret);}public static function bc2bin($num){return self::dec2base($num,MAX_BASE);}public static function bin2bc($num){return self::base2dec($num,MAX_BASE);}public static function dec2base($dec,$base,$digits=FALSE){if(extension_loaded('bcmath')){if($base<2||$base>256)die("Invalid Base: ".$base);bcscale(0);$value="";if(!$digits)$digits=self::digits($base);while($dec>$base-1){$rest=bcmod($dec,$base);$dec=bcdiv($dec,$base);$value=$digits[$rest].$value;}$value=$digits[intval($dec)].$value;return(string)$value;}else{throw new ErrorException("Please install BCMATH");}}public static function base2dec($value,$base,$digits=FALSE){if(extension_loaded('bcmath')){if($base<2||$base>256)die("Invalid Base: ".$base);bcscale(0);if($base<37)$value=strtolower($value);if(!$digits)$digits=self::digits($base);$size=strlen($value);$dec="0";for($loop=0;$loop<$size;$loop++){$element=strpos($digits,$value[$loop]);$power=bcpow($base,$size-$loop-1);$dec=bcadd($dec,bcmul($element,$power));}return(string)$dec;}else{throw new ErrorException("Please install BCMATH");}}public static function digits($base){if($base>64){$digits="";for($loop=0;$loop<256;$loop++){$digits.=chr($loop);}}else{$digits="0123456789abcdefghijklmnopqrstuvwxyz";$digits.="ABCDEFGHIJKLMNOPQRSTUVWXYZ-_";}$digits=substr($digits,0,$base);return(string)$digits;}public static function equalbinpad(&$x,&$y){$xlen=strlen($x);$ylen=strlen($y);$length=max($xlen,$ylen);self::fixedbinpad($x,$length);self::fixedbinpad($y,$length);}public static function fixedbinpad(&$num,$length){$pad='';for($ii=0;$ii<$length-strlen($num);$ii++){$pad.=self::bc2bin('0');}$num=$pad.$num;}}
+//class bcmath_Utils{public static function bcrand($min,$max=false){if(extension_loaded('bcmath')){if(!$max){$max=$min;$min=0;}return bcadd(bcmul(bcdiv(mt_rand(0,mt_getrandmax()),mt_getrandmax(),strlen($max)),bcsub(bcadd($max,1),$min)),$min);}else{throw new ErrorException("Please install BCMATH");}}public static function bchexdec($hex){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){$len=strlen($hex);$dec='';for($i=1;$i<=$len;$i++)$dec=bcadd($dec,bcmul(strval(hexdec($hex[$i-1])),bcpow('16',strval($len-$i))));return $dec;}else{throw new ErrorException("Please install BCMATH");}}public static function bcdechex($dec){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){$hex='';$positive=$dec<0?false:true;while($dec){$hex.=dechex(abs(bcmod($dec,'16')));$dec=bcdiv($dec,'16',0);}if($positive)return strrev($hex);for($i=0;$isset($hex[$i]);$i++)$hex[$i]=dechex(15-hexdec($hex[$i]));for($i=0;isset($hex[$i])&&$hex[$i]=='f';$i++)$hex[$i]='0';if(isset($hex[$i]))$hex[$i]=dechex(hexdec($hex[$i])+1);return strrev($hex);}else{throw new ErrorException("Please install BCMATH");}}public static function bcand($x,$y){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){return self::_bcbitwise_internal($x,$y,'bcmath_Utils::_bcand');}else{throw new ErrorException("Please install BCMATH");}}public static function bcor($x,$y){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){return self::_bcbitwise_internal($x,$y,'self::_bcor');}else{throw new ErrorException("Please install BCMATH");}}public static function bcxor($x,$y){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){return self::_bcbitwise_internal($x,$y,'self::_bcxor');}else{throw new ErrorException("Please install BCMATH");}}public static function bcleftshift($num,$shift){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){bcscale(0);return bcmul($num,bcpow(2,$shift));}else{throw new ErrorException("Please install BCMATH");}}public static function bcrightshift($num,$shift){if(extension_loaded('bcmath')&&USE_EXT=='BCMATH'){bcscale(0);return bcdiv($num,bcpow(2,$shift));}else{throw new ErrorException("Please install BCMATH");}}public static function _bcand($x,$y){return $x&$y;}public static function _bcor($x,$y){return $x|$y;}public static function _bcxor($x,$y){return $x^$y;}public static function _bcbitwise_internal($x,$y,$op){$bx=self::bc2bin($x);$by=self::bc2bin($y);self::equalbinpad($bx,$by);$ix=0;$ret='';for($ix=0;$ix<strlen($bx);$ix++){$xd=substr($bx,$ix,1);$yd=substr($by,$ix,1);$ret.=call_user_func($op,$xd,$yd);}return self::bin2bc($ret);}public static function bc2bin($num){return self::dec2base($num,MAX_BASE);}public static function bin2bc($num){return self::base2dec($num,MAX_BASE);}public static function dec2base($dec,$base,$digits=FALSE){if(extension_loaded('bcmath')){if($base<2||$base>256)die("Invalid Base: ".$base);bcscale(0);$value="";if(!$digits)$digits=self::digits($base);while($dec>$base-1){$rest=bcmod($dec,$base);$dec=bcdiv($dec,$base);$value=$digits[$rest].$value;}$value=$digits[intval($dec)].$value;return(string)$value;}else{throw new ErrorException("Please install BCMATH");}}public static function base2dec($value,$base,$digits=FALSE){if(extension_loaded('bcmath')){if($base<2||$base>256)die("Invalid Base: ".$base);bcscale(0);if($base<37)$value=strtolower($value);if(!$digits)$digits=self::digits($base);$size=strlen($value);$dec="0";for($loop=0;$loop<$size;$loop++){$element=strpos($digits,$value[$loop]);$power=bcpow($base,$size-$loop-1);$dec=bcadd($dec,bcmul($element,$power));}return(string)$dec;}else{throw new ErrorException("Please install BCMATH");}}public static function digits($base){if($base>64){$digits="";for($loop=0;$loop<256;$loop++){$digits.=chr($loop);}}else{$digits="0123456789abcdefghijklmnopqrstuvwxyz";$digits.="ABCDEFGHIJKLMNOPQRSTUVWXYZ-_";}$digits=substr($digits,0,$base);return(string)$digits;}public static function equalbinpad(&$x,&$y){$xlen=strlen($x);$ylen=strlen($y);$length=max($xlen,$ylen);self::fixedbinpad($x,$length);self::fixedbinpad($y,$length);}public static function fixedbinpad(&$num,$length){$pad='';for($ii=0;$ii<$length-strlen($num);$ii++){$pad.=self::bc2bin('0');}$num=$pad.$num;}}
 // https://github.com/mdanter/phpecc/blob/master/classes/util/gmp_Utils.php
 class gmp_Utils {public static function gmp_mod2($n,$d){if(extension_loaded('gmp')&&USE_EXT=='GMP'){$res=gmp_div_r($n,$d);if(gmp_cmp(0,$res)>0){$res=gmp_add($d,$res);}return gmp_strval($res);} else {throw new Exception("PLEASE INSTALL GMP");}}public static function gmp_random($n){if(extension_loaded('gmp')&&USE_EXT=='GMP'){$random=gmp_strval(gmp_random());$small_rand=rand();while(gmp_cmp($random,$n)>0){$random=gmp_div($random,$small_rand,GMP_ROUND_ZERO);}return gmp_strval($random);}else{throw new Exception("PLEASE INSTALL GMP");}}public static function gmp_hexdec($hex){if(extension_loaded('gmp')&&USE_EXT=='GMP'){$dec=gmp_strval(gmp_init($hex),10);return $dec;}else{throw new Exception("PLEASE INSTALL GMP");}}public static function gmp_dechex($dec){if(extension_loaded('gmp')&&USE_EXT=='GMP'){$hex=gmp_strval(gmp_init($dec),16);return $hex;}else{throw new Exception("PLEASE INSTALL GMP");}}}
 
@@ -109,11 +110,11 @@ class CryptUtil {
 class HDAddress {
 
 
-  private static $secp256k1;
-  private static $secp256k1_G;
+	private static $secp256k1;
+  	private static $secp256k1_G;
 	private static $secp256k1_N;
-  private static $prefix_private;
-  private static $prefix_public;
+  	private static $prefix_private;
+  	private static $prefix_public;
 	private static $version_private;
 	private static $version_public;
 	
@@ -131,17 +132,17 @@ class HDAddress {
 	
 	
 	
-  public static function bitcoin() {  self::$prefix_public = '0x00'; self::$prefix_private = '0x80';   self::$version_public = '0488b21e'; self::$version_private = '0488ade4';   }
-  public static function feathercoin() { self::$prefix_public = '0x0E'; self::$prefix_private = '0x8E'; self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
-  public static function litecoin() { self::$prefix_public = '0x30'; self::$prefix_private = '0xB0';  self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
-  public static function namecoin() { self::$prefix_public = '0x34'; self::$prefix_private = '0xB4';  self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
-  public static function ppcoin() {   self::$prefix_public = '0x37'; self::$prefix_private = '0xB7';  self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
+  	public static function bitcoin() {  self::$prefix_public = '0x00'; self::$prefix_private = '0x80';   self::$version_public = '0488b21e'; self::$version_private = '0488ade4';   }
+  	public static function feathercoin() { self::$prefix_public = '0x0E'; self::$prefix_private = '0x8E'; self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
+  	public static function litecoin() { self::$prefix_public = '0x30'; self::$prefix_private = '0xB0';  self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
+  	public static function namecoin() { self::$prefix_public = '0x34'; self::$prefix_private = '0xB4';  self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
+  	public static function ppcoin() {   self::$prefix_public = '0x37'; self::$prefix_private = '0xB7';  self::$version_public = '0488b21e'; self::$version_private = '0488ade4'; }
 	
 	public static function bitcoin_testnet() { self::$prefix_public = '0x6F'; self::$prefix_private = '0xEF';  self::$version_public = '043587cf'; self::$version_private = '04358394'; }
 
 	
         
-  public static function setup() {
+    public static function setup() {
     if( !isset(self::$secp256k1) ) {
       self::$secp256k1 = new CurveFp(
       '115792089237316195423570985008687907853269984665640564039457584007908834671663', '0', '7');
@@ -155,31 +156,31 @@ class HDAddress {
     if( !isset(self::$secp256k1_N) ) {
         self::$secp256k1_N = 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141';
     }
-  
-  } 
+
+    } 
 
 	public static function base58check_encode($leadingByte, $bin, $trailingByte = null) {
-    $bin = chr($leadingByte) . $bin;
-      if ($trailingByte !== null) { $bin .= chr($trailingByte); }
-      $checkSum = substr(hash('sha256', hash('sha256', $bin, true), true), 0, 4);
-      $bin .= $checkSum;
-      $base58 = self::base58_encode(bcmath_Utils::bin2bc($bin));
-      for ($i = 0; $i < strlen($bin); $i++) { 
-        if ($bin[$i] != "\x00") { break; }
-        $base58 = '1' . $base58;
-      }
-    return $base58;
-  }
+        $bin = chr($leadingByte) . $bin;
+        if ($trailingByte !== null) { $bin .= chr($trailingByte); }
+        $checkSum = substr(hash('sha256', hash('sha256', $bin, true), true), 0, 4);
+        $bin .= $checkSum;
+        $base58 = self::base58_encode(bcmath_Utils::bin2bc($bin));
+        for ($i = 0; $i < strlen($bin); $i++) { 
+            if ($bin[$i] != "\x00") { break; }
+            $base58 = '1' . $base58;
+        }
+        return $base58;
+    }
 
     
     public static function base58_encode($num) {
-      return bcmath_Utils::dec2base($num, 58, '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
+        return bcmath_Utils::dec2base($num, 58, '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
     }
 	
 	
 	public static function generate_master() {
 		$seed = '';
-    //for ($i = 0; $i < 32; $i++) { $seed .= chr(mt_rand(0, $i ? 0xff : 0xfe)); }
+        //for ($i = 0; $i < 32; $i++) { $seed .= chr(mt_rand(0, $i ? 0xff : 0xfe)); }
 		for ($i = 0; $i < 32; $i++) { $seed .= chr(CryptUtil::devurandom_rand(0, $i ? 0xff : 0xfe)); }
 		//using devurandom for more secure prng
 		return bin2hex($seed);
@@ -194,7 +195,7 @@ class HDAddress {
 		if ($i >= 0x80000000) {
 			//private derivation
 			//let I = HMAC-SHA512(Key = cpar, Data = 0x00 || kpar || i) [Note:]
-      $I = hash_hmac('sha512',  chr(0x00) . hex2bin($this->secretKey) .   pack('N',$i) ,   hex2bin($this->chainCode) );
+        $I = hash_hmac('sha512',  chr(0x00) . hex2bin($this->secretKey) .   pack('N',$i) ,   hex2bin($this->chainCode) );
 		} else {
 			//public derivation
 			//let I = HMAC-SHA512(Key = cpar, Data = ?(kpar*G) || i)
@@ -233,10 +234,9 @@ class HDAddress {
 	}
 	
 		
-  function __construct($seed = '') {
-		if ($seed == '') return ; 
-		
-		if( !self::$prefix_public || !self::$prefix_private ) {  throw new Exception('Coin type not set'); exit; } 
+    function __construct($seed = '') {
+       if ($seed == '') return ; 
+	   if( !self::$prefix_public || !self::$prefix_private ) {  throw new Exception('Coin type not set'); exit; } 
 		self::setup();
 		$I = hash_hmac('sha512',   hex2bin($seed) , 'Bitcoin seed');
 		
