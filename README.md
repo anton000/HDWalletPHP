@@ -11,15 +11,15 @@ Prototype software, use at your own peril.
 require_once 'HDAddress.php';  
   
   
-HDAddress::bitcoin();
+HDAddress::bitcoin();  
 $hd = new HDAddress('000102030405060708090a0b0c0d0e0f');
   
 or
   
-HDAddress::bitcoin();
+HDAddress::bitcoin();  
 $hd = new HDAddress(HDAddress::generate());
 
-
+    
 echo $hd->identifier  
 echo $hd->fingerPrint    
 echo $hd->mainAddress  
