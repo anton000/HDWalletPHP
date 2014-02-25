@@ -159,15 +159,18 @@ class HDAddress {
     } 
 
     public static function base58check_encode($leadingByte, $bin, $trailingByte = null) {
-        $bin = chr($leadingByte) . $bin;
+        //$bin = chr($leadingByte) . $bin;
+        if ($leadingByte != '') { $bin = chr($leadingByte) . $bin  ;}
         if ($trailingByte !== null) { $bin .= chr($trailingByte); }
         $checkSum = substr(hash('sha256', hash('sha256', $bin, true), true), 0, 4);
         $bin .= $checkSum;
         $base58 = self::base58_encode(bcmath_Utils::bin2bc($bin));
-        for ($i = 0; $i < strlen($bin); $i++) { 
-            if ($bin[$i] != "\x00") { break; }
-            $base58 = '1' . $base58;
-        }
+        if($leadingByte != '') {  //leadingbyte set check
+          for ($i = 0; $i < strlen($bin); $i++) { 
+              if ($bin[$i] != "\x00") { break; }
+              $base58 = '1' . $base58;
+          }
+         } 
         return $base58;
     }
 
@@ -235,6 +238,9 @@ class HDAddress {
         
     function __construct($seed = '') {
        if ($seed == '') return ; 
+       
+       
+       
        if( !self::$prefix_public || !self::$prefix_private ) {  throw new Exception('Coin type not set'); exit; } 
         self::setup();
         $I = hash_hmac('sha512',   hex2bin($seed) , 'Bitcoin seed');
@@ -257,6 +263,8 @@ class HDAddress {
         $this->depth = 0;
         $this->serialPublicKey =  self::$version_public  . '00'  . '00000000' . '00000000'. $this->chainCode. $this->publicKey ;
         $this->serialPrivateKey = self::$version_private  . '00'  . '00000000' . '00000000'. $this->chainCode. '00' . $this->secretKey ;
+        
+        
    
     }
     
@@ -277,6 +285,8 @@ echo $test->publicKey. '<br>';
 echo $test->chainCode. '<br>';
 echo $test->serialPublicKey. '<br>';
 echo $test->serialPrivateKey. '<br>';
+echo HDAddress::base58check_encode('', hex2bin($test->serialPublicKey) )  .'<br>';
+echo HDAddress::base58check_encode('', hex2bin($test->serialPrivateKey) )  .'<br>';
 echo '<br>';
 echo '<br>';
 
